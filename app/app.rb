@@ -131,7 +131,7 @@ module ActivateAdmin
         options = admin_fields(collection_model)[fieldname.to_sym]
         if options[:type] == :lookup
           case b
-          when :in
+          when :is, :in
             if active_record?
               query << ["id in (?)", collection_model.where(fieldname => q).select(collection_key)]
             elsif mongoid?
@@ -149,6 +149,12 @@ module ActivateAdmin
         elsif persisted_field?(collection_model, fieldname)
           if matchable_regex.include?(options[:type])
             case b
+            when :is
+              if active_record?
+                query << ["id in (?)", collection_model.where(["#{fieldname} = ?", q]).select(collection_key)]
+              elsif mongoid?
+                query << {:id.in => collection_model.where(fieldname => /#{Regexp.escape(q)}/i).pluck(collection_key)}
+              end
             when :in
               if active_record?
                 query << ["id in (?)", collection_model.where(["#{fieldname} ilike ?", "%#{q}%"]).select(collection_key)]
@@ -172,7 +178,7 @@ module ActivateAdmin
               elsif mongoid?
                 query << {:id.in => collection_model.where(fieldname => q).pluck(collection_key)}
               end
-            when :nin
+            when :is, :nin
               if active_record?
                 query << ["id not in (?)", collection_model.where(fieldname => q).select(collection_key)]
               elsif mongoid?
@@ -187,7 +193,7 @@ module ActivateAdmin
             end
           elsif options[:type] == :geopicker
             case b
-            when :in
+            when :is, :in
               if active_record?
                 # TODO
                 raise OperatorNotSupported
@@ -206,7 +212,7 @@ module ActivateAdmin
             end
           elsif options[:type] == :check_box
             case b
-            when :in
+            when :is, :in
               if active_record?
                 query << ["id in (?)", collection_model.where(fieldname => (q == 'true')).select(collection_key)]
               elsif mongoid?
@@ -223,7 +229,7 @@ module ActivateAdmin
             end
           elsif options[:type] == :date
             case b
-            when :in
+            when :is, :in
               if active_record?
                 query << ["id in (?)", collection_model.where(fieldname => Date.parse(q)).select(collection_key)]
               elsif mongoid?
@@ -244,7 +250,7 @@ module ActivateAdmin
             end
           elsif options[:type] == :datetime
             case b
-            when :in
+            when :is, :in
               if active_record?
                 query << ["id in (?)", collection_model.where(fieldname => Time.zone.parse(q)).select(collection_key)]
               elsif mongoid?
