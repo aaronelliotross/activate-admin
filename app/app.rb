@@ -35,7 +35,7 @@ module ActivateAdmin
 
     before do
       if ENV['PERMITTED_IPS'] and Padrino.env == :production
-        if ENV['CLIENT_IP_HEADER']
+        if !ENV['CLIENT_IP_HEADER']
           ip_to_verify = request.ip
         else
           rack_header_name = "HTTP_#{ENV['CLIENT_IP_HEADER'].upcase.gsub!('-', '_')}"
