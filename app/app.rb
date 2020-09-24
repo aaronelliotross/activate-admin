@@ -35,7 +35,13 @@ module ActivateAdmin
 
     before do
       if ENV['PERMITTED_IPS'] and Padrino.env == :production
-        halt 403 unless ENV['PERMITTED_IPS'].split(',').include? request.ip
+        if ENV['CLIENT_IP_HEADER']
+          ip_to_verify = request.ip
+        else
+          rack_header_name = "HTTP_#{ENV['CLIENT_IP_HEADER'].upcase.gsub!('-', '_')}"
+          ip_to_verify = request.env[rack_header_name]
+        end
+        halt 403 unless ENV['PERMITTED_IPS'].split(',').include? ip_to_verify
       end
       redirect url(:login) + "?redir=#{CGI::escape request.path}" unless [url(:login), url(:logout), url(:forgot_password)].any? { |p| p == request.path } or ['stylesheets','javascripts'].any? { |p| request.path.starts_with? "#{ActivateAdmin::App.uri_root}/#{p}" } or Account.count == 0 or (current_account and current_account.admin?)
       Time.zone = current_account.time_zone if current_account and current_account.respond_to?(:time_zone) and current_account.time_zone
